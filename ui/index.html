@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Air & Insights Agent</title>
+    <link rel="stylesheet" href="/static/style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <div class="logo">
+                <span class="logo-icon">🌤️</span>
+                <h1>Air & Insights Agent</h1>
+            </div>
+            <p class="subtitle">AI-powered air quality analysis & exercise guidance</p>
+        </header>
+
+        <!-- Main Content -->
+        <main class="main">
+            <!-- Chat Section -->
+            <section class="chat-section">
+                <div class="chat-container" id="chatContainer">
+                    <!-- Welcome message -->
+                    <div class="message assistant">
+                        <div class="message-avatar">🤖</div>
+                        <div class="message-content">
+                            <p>👋 <strong>Welcome to Air & Insights Agent!</strong></p>
+                            <p>I can help you with:</p>
+                            <ul>
+                                <li><strong>Air Quality Analysis</strong> - Check if it's safe to exercise outdoors</li>
+                                <li><strong>NASA APOD</strong> - Get today's Astronomy Picture of the Day</li>
+                            </ul>
+                            <p>Try asking:</p>
+                            <div class="quick-actions">
+                                <button class="quick-btn" onclick="sendQuickMessage('What is the air quality at 42.6977, 23.3219 for the next 6 hours? Is it safe to run outdoors?')">
+                                    🏃 Check Sofia Air Quality
+                                </button>
+                                <button class="quick-btn" onclick="sendQuickMessage('Show me today\'s NASA APOD and summarize it in 2 lines')">
+                                    🌟 Today's APOD
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Input Area -->
+                <div class="input-area">
+                    <form id="chatForm" onsubmit="handleSubmit(event)">
+                        <input 
+                            type="text" 
+                            id="messageInput" 
+                            placeholder="Ask about air quality or NASA APOD..." 
+                            autocomplete="off"
+                            required
+                        >
+                        <button type="submit" id="sendBtn">
+                            <span class="send-icon">➤</span>
+                        </button>
+                    </form>
+                </div>
+            </section>
+
+            <!-- Info Panel -->
+            <aside class="info-panel">
+                <div class="info-card">
+                    <h3>📍 Quick Analysis</h3>
+                    <form id="analyzeForm" onsubmit="handleAnalyze(event)">
+                        <div class="form-group">
+                            <label for="cityName">City Name</label>
+                            <input type="text" id="cityName" placeholder="e.g., Paris, Tokyo, Sofia" value="Sofia" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="hours">Forecast Hours</label>
+                            <input type="number" id="hours" value="6" min="1" max="72" required>
+                        </div>
+                        <button type="submit" class="analyze-btn">Analyze Air Quality</button>
+                    </form>
+                </div>
+
+                <div class="info-card">
+                    <h3>🌟 NASA APOD</h3>
+                    <button onclick="fetchAPOD()" class="apod-btn">Get Today's Picture</button>
+                    <div id="apodPreview" class="apod-preview"></div>
+                </div>
+
+                <div class="info-card">
+                    <h3>ℹ️ About</h3>
+                    <p class="attribution">Weather data by <a href="https://open-meteo.com/" target="_blank">Open-Meteo.com</a></p>
+                    <p class="attribution">Images from <a href="https://apod.nasa.gov/" target="_blank">NASA APOD</a></p>
+                    <p class="version">Version 1.0.0</p>
+                </div>
+            </aside>
+        </main>
+    </div>
+
+    <script>
+        const API_BASE = '';  // Same origin
+        const chatContainer = document.getElementById('chatContainer');
+        const messageInput = document.getElementById('messageInput');
+        const sendBtn = document.getElementById('sendBtn');
+
+        // Add message to chat
+        function addMessage(content, isUser = false, isLoading = false) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${isUser ? 'user' : 'assistant'}`;
+            
+            if (isLoading) {
+                messageDiv.id = 'loadingMessage';
+                messageDiv.innerHTML = `
+                    <div class="message-avatar">🤖</div>
+                    <div class="message-content">
+                        <div class="loading-dots">
+                            <span></span><span></span><span></span>
+                        </div>
+                    </div>
+                `;
+            } else {
+                messageDiv.innerHTML = `
+                    <div class="message-avatar">${isUser ? '👤' : '🤖'}</div>
+                    <div class="message-content">${formatMessage(content)}</div>
+                `;
+            }
+            
+            chatContainer.appendChild(messageDiv);
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+            return messageDiv;
+        }
+
+        // Remove loading message
+        function removeLoading() {
+            const loading = document.getElementById('loadingMessage');
+            if (loading) loading.remove();
+        }
+
+        // Format message content (supports markdown-like formatting)
+        function formatMessage(content) {
+            // Convert markdown-like syntax
+            content = content
+                .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                .replace(/\n/g, '<br>')
+                .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank">$1</a>');
+            return `<p>${content}</p>`;
+        }
+
+        // Send message to chat endpoint
+        async function sendMessage(message) {
+            // Add user message
+            addMessage(message, true);
+            
+            // Show loading
+            addMessage('', false, true);
+            
+            // Disable input
+            messageInput.disabled = true;
+            sendBtn.disabled = true;
+            
+            try {
+                const response = await fetch(`${API_BASE}/chat`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ message })
+                });
+                
+                removeLoading();
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+                
+                const data = await response.json();
+                addMessage(data.response);
+                
+            } catch (error) {
+                removeLoading();
+                addMessage(`❌ Error: ${error.message}. Please try again.`);
+            } finally {
+                messageInput.disabled = false;
+                sendBtn.disabled = false;
+                messageInput.focus();
+            }
+        }
+
+        // Handle form submit
+        function handleSubmit(event) {
+            event.preventDefault();
+            const message = messageInput.value.trim();
+            if (message) {
+                sendMessage(message);
+                messageInput.value = '';
+            }
+        }
+
+        // Quick message button
+        function sendQuickMessage(message) {
+            messageInput.value = message;
+            sendMessage(message);
+            messageInput.value = '';
+        }
+
+        // Handle direct analyze form
+        async function handleAnalyze(event) {
+            event.preventDefault();
+            
+            const cityName = document.getElementById('cityName').value.trim();
+            const hours = parseInt(document.getElementById('hours').value);
+            
+            const message = `What's the air quality in ${cityName} for the next ${hours} hours? Is it safe to run outdoors?`;
+            sendMessage(message);
+        }
+
+        // Fetch APOD directly
+        async function fetchAPOD() {
+            const previewDiv = document.getElementById('apodPreview');
+            previewDiv.innerHTML = '<p class="loading">Loading...</p>';
+            
+            try {
+                const response = await fetch(`${API_BASE}/apod/today`);
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                
+                const data = await response.json();
+                
+                previewDiv.innerHTML = `
+                    <div class="apod-card">
+                        <img src="${data.url}" alt="${data.title}" class="apod-image" onclick="window.open('${data.hdurl || data.url}', '_blank')">
+                        <h4>${data.title}</h4>
+                        <p class="apod-summary">${data.summary || ''}</p>
+                    </div>
+                `;
+                
+                // Also add to chat
+                addMessage(`🌟 **${data.title}**\n\n${data.summary || data.explanation.substring(0, 200) + '...'}\n\n[View Full Image](${data.hdurl || data.url})\n\n_${data.attribution}_`);
+                
+            } catch (error) {
+                previewDiv.innerHTML = `<p class="error">Failed to load APOD: ${error.message}</p>`;
+            }
+        }
+
+        // Focus input on load
+        window.onload = () => messageInput.focus();
+    </script>
+</body>
+</html>

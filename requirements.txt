@@ -1,0 +1,29 @@
+# Air & Insights Agent - Dependencies
+# Python 3.11+
+
+# Web Framework
+fastapi==0.115.6
+uvicorn[standard]==0.34.0
+
+# HTTP Client (async)
+httpx==0.28.1
+
+# LLM Client (GitHub Models - OpenAI compatible)
+openai==1.58.1
+
+# Validation & Settings
+pydantic==2.10.3
+pydantic-settings==2.7.0
+
+# Environment Variables
+python-dotenv==1.0.1
+
+# Testing
+pytest==8.3.4
+pytest-asyncio==0.25.0
+pytest-cov==6.0.0
+
+# Development
+black==24.10.0
+isort==5.13.2
+mypy==1.13.0

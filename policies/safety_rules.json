@@ -1,0 +1,114 @@
+{
+  "name": "Air & Insights Agent Safety Rules",
+  "version": "1.0.0",
+  "description": "Policy-driven configuration for air quality safety assessment",
+  
+  "air_quality_thresholds": {
+    "pm25": {
+      "safe": 25,
+      "moderate": 50,
+      "unhealthy_sensitive": 75,
+      "unhealthy": 100,
+      "very_unhealthy": 150,
+      "hazardous": 200,
+      "unit": "µg/m³",
+      "description": "PM2.5 fine particulate matter thresholds based on WHO guidelines"
+    },
+    "pm10": {
+      "safe": 50,
+      "moderate": 100,
+      "unhealthy_sensitive": 150,
+      "unhealthy": 200,
+      "very_unhealthy": 300,
+      "hazardous": 400,
+      "unit": "µg/m³",
+      "description": "PM10 coarse particulate matter thresholds"
+    }
+  },
+  
+  "temperature_thresholds": {
+    "too_cold_exercise": 0,
+    "cold_caution": 5,
+    "optimal_min": 10,
+    "optimal_max": 25,
+    "warm_caution": 30,
+    "too_hot_exercise": 35,
+    "unit": "°C",
+    "description": "Temperature thresholds for outdoor exercise safety"
+  },
+  
+  "exercise_recommendations": {
+    "safe": {
+      "level": "SAFE",
+      "color": "green",
+      "icon": "✅",
+      "recommendation": "Great conditions for outdoor exercise! Enjoy your run."
+    },
+    "moderate": {
+      "level": "MODERATE",
+      "color": "yellow",
+      "icon": "⚠️",
+      "recommendation": "Acceptable conditions. Sensitive individuals should consider shorter workouts."
+    },
+    "unhealthy_sensitive": {
+      "level": "UNHEALTHY_SENSITIVE",
+      "color": "orange",
+      "icon": "🟠",
+      "recommendation": "Sensitive groups (children, elderly, respiratory issues) should limit outdoor activity."
+    },
+    "unhealthy": {
+      "level": "UNHEALTHY",
+      "color": "red",
+      "icon": "🔴",
+      "recommendation": "Consider indoor exercise. If you must go outside, reduce intensity and duration."
+    },
+    "very_unhealthy": {
+      "level": "VERY_UNHEALTHY",
+      "color": "purple",
+      "icon": "🟣",
+      "recommendation": "Avoid outdoor exercise. Switch to indoor activities."
+    },
+    "hazardous": {
+      "level": "HAZARDOUS",
+      "color": "maroon",
+      "icon": "☠️",
+      "recommendation": "Do NOT exercise outdoors. Stay indoors and keep windows closed."
+    }
+  },
+  
+  "validation": {
+    "latitude": {
+      "min": -90.0,
+      "max": 90.0,
+      "description": "Valid latitude range"
+    },
+    "longitude": {
+      "min": -180.0,
+      "max": 180.0,
+      "description": "Valid longitude range"
+    },
+    "hours": {
+      "min": 1,
+      "max": 384,
+      "default": 6,
+      "description": "Forecast hours range (up to 16 days via Open-Meteo)"
+    }
+  },
+  
+  "agent": {
+    "cache_ttl_seconds": 600,
+    "data_quality_threshold": 0.8,
+    "max_retries": 3,
+    "retry_backoff_base": 1.0,
+    "retry_backoff_max": 10.0,
+    "request_timeout_seconds": 10,
+    "description": "Agent behavior configuration"
+  },
+  
+  "attribution": {
+    "weather_data": "Weather data by Open-Meteo.com",
+    "air_quality_data": "Air quality data by Open-Meteo.com",
+    "nasa_apod": "Image from NASA Astronomy Picture of the Day",
+    "required_display": true
+  }
+}
