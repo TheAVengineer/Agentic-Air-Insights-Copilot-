@@ -103,7 +103,7 @@ actionable guidance for outdoor activities.
     version="1.0.0",
     contact={
         "name": "Air & Insights Agent",
-        "url": "https://github.com/yourusername/air-insights-agent",
+        "url": "https://github.com/TheAVengineer/Agentic-Air-Insights-Copilot-",
     },
     license_info={
         "name": "MIT",

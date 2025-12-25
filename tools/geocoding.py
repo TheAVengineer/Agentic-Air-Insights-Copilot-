@@ -51,6 +51,19 @@ class GeocodingService:
         Returns:
             GeocodingResult with coordinates and metadata, or None if not found
         """
+        # Validate input - reject too short or invalid queries
+        # Validate input - require minimum 2 characters
+        clean_name = location_name.strip() if location_name else ""
+        
+        if len(clean_name) < 2:
+            logger.warning(f"Location name too short (min 2 chars): '{location_name}'")
+            return None
+        
+        # Reject purely numeric queries or those without letters
+        if clean_name.isdigit() or not any(c.isalpha() for c in clean_name):
+            logger.warning(f"Invalid location name (no letters): '{location_name}'")
+            return None
+        
         try:
             async with httpx.AsyncClient() as client:
                 response = await client.get(
@@ -60,6 +73,7 @@ class GeocodingService:
                         "format": "json",
                         "limit": 1,
                         "addressdetails": 1,
+                        "accept-language": "en",  # Force English names
                     },
                     headers={"User-Agent": self.USER_AGENT},
                     timeout=10.0,

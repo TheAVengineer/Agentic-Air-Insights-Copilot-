@@ -3,127 +3,289 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Air & Insights Agent</title>
+    <title>Air & Insights Agent | AI-Powered Air Quality</title>
     <link rel="stylesheet" href="/static/style.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌤️</text></svg>">
 </head>
 <body>
-    <div class="container">
-        <!-- Header -->
-        <header class="header">
-            <div class="logo">
-                <span class="logo-icon">🌤️</span>
-                <h1>Air & Insights Agent</h1>
+    <!-- Animated Background -->
+    <div class="bg-gradient"></div>
+    <div class="bg-blur"></div>
+
+    <div class="app-container">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <div class="brand">
+                    <div class="brand-icon">
+                        <span>🌤️</span>
+                    </div>
+                    <div class="brand-text">
+                        <h1>Air & Insights</h1>
+                        <span class="brand-subtitle">AI Copilot</span>
+                    </div>
+                </div>
             </div>
-            <p class="subtitle">AI-powered air quality analysis & exercise guidance</p>
-        </header>
+
+            <nav class="sidebar-nav">
+                <div class="nav-section">
+                    <span class="nav-label">Quick Actions</span>
+                    <button class="nav-btn active" onclick="showChat()">
+                        <span class="nav-icon">💬</span>
+                        <span>Chat</span>
+                    </button>
+                    <button class="nav-btn" onclick="sendQuickMessage('What is the air quality in Sofia for the next 6 hours? Is it safe to run outdoors?')">
+                        <span class="nav-icon">🏃</span>
+                        <span>Air Quality Check</span>
+                    </button>
+                    <button class="nav-btn" onclick="sendQuickMessage('Show me today\'s NASA APOD')">
+                        <span class="nav-icon">🚀</span>
+                        <span>NASA APOD</span>
+                    </button>
+                </div>
+
+                <div class="nav-section">
+                    <span class="nav-label">Examples</span>
+                    <button class="nav-btn example" onclick="sendQuickMessage('What was the weather like in London last week?')">
+                        <span class="nav-icon">📊</span>
+                        <span>Historical Weather</span>
+                    </button>
+                    <button class="nav-btn example" onclick="sendQuickMessage('Compare air quality between Paris and Berlin')">
+                        <span class="nav-icon">⚖️</span>
+                        <span>Compare Cities</span>
+                    </button>
+                    <button class="nav-btn example" onclick="sendQuickMessage('What\'s the 7-day forecast for Tokyo?')">
+                        <span class="nav-icon">📅</span>
+                        <span>Weekly Forecast</span>
+                    </button>
+                </div>
+            </nav>
+
+            <div class="sidebar-footer">
+                <div class="status-indicator">
+                    <span class="status-dot online"></span>
+                    <span>System Online</span>
+                </div>
+                <div class="footer-links">
+                    <a href="https://open-meteo.com/" target="_blank">Open-Meteo</a>
+                    <span>•</span>
+                    <a href="https://apod.nasa.gov/" target="_blank">NASA APOD</a>
+                </div>
+            </div>
+        </aside>
 
         <!-- Main Content -->
-        <main class="main">
-            <!-- Chat Section -->
-            <section class="chat-section">
-                <div class="chat-container" id="chatContainer">
-                    <!-- Welcome message -->
-                    <div class="message assistant">
-                        <div class="message-avatar">🤖</div>
-                        <div class="message-content">
-                            <p>👋 <strong>Welcome to Air & Insights Agent!</strong></p>
-                            <p>I can help you with:</p>
-                            <ul>
-                                <li><strong>Air Quality Analysis</strong> - Check if it's safe to exercise outdoors</li>
-                                <li><strong>NASA APOD</strong> - Get today's Astronomy Picture of the Day</li>
-                            </ul>
-                            <p>Try asking:</p>
-                            <div class="quick-actions">
-                                <button class="quick-btn" onclick="sendQuickMessage('What is the air quality at 42.6977, 23.3219 for the next 6 hours? Is it safe to run outdoors?')">
-                                    🏃 Check Sofia Air Quality
-                                </button>
-                                <button class="quick-btn" onclick="sendQuickMessage('Show me today\'s NASA APOD and summarize it in 2 lines')">
-                                    🌟 Today's APOD
-                                </button>
+        <main class="main-content">
+            <!-- Header -->
+            <header class="main-header">
+                <div class="header-left">
+                    <button class="menu-toggle" onclick="toggleSidebar()">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="3" y1="6" x2="21" y2="6"></line>
+                            <line x1="3" y1="12" x2="21" y2="12"></line>
+                            <line x1="3" y1="18" x2="21" y2="18"></line>
+                        </svg>
+                    </button>
+                    <h2 class="page-title">AI Assistant</h2>
+                </div>
+                <div class="header-right">
+                    <button class="icon-btn" onclick="clearChat()" title="Clear Chat">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="3,6 5,6 21,6"></polyline>
+                            <path d="M19,6v14a2,2,0,0,1-2,2H7a2,2,0,0,1-2-2V6M8,6V4a2,2,0,0,1,2-2h4a2,2,0,0,1,2,2V6"></path>
+                        </svg>
+                    </button>
+                    <button class="icon-btn" onclick="toggleTheme()" title="Toggle Theme">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="5"></circle>
+                            <path d="M12,1V3M12,21V23M4.22,4.22L5.64,5.64M18.36,18.36L19.78,19.78M1,12H3M21,12H23M4.22,19.78L5.64,18.36M18.36,5.64L19.78,4.22"></path>
+                        </svg>
+                    </button>
+                </div>
+            </header>
+
+            <!-- Chat Area -->
+            <div class="chat-area">
+                <div class="chat-messages" id="chatContainer">
+                    <!-- Welcome Card -->
+                    <div class="welcome-card">
+                        <div class="welcome-icon">👋</div>
+                        <h3>Welcome to Air & Insights Agent</h3>
+                        <p>Your AI-powered assistant for air quality analysis, weather forecasts, and NASA's Astronomy Picture of the Day.</p>
+                        
+                        <div class="feature-grid">
+                            <div class="feature-item" onclick="sendQuickMessage('What is the air quality in Sofia for the next 6 hours? Is it safe to run outdoors?')">
+                                <span class="feature-icon">🌬️</span>
+                                <span class="feature-title">Air Quality</span>
+                                <span class="feature-desc">Real-time AQI data</span>
+                            </div>
+                            <div class="feature-item" onclick="sendQuickMessage('What\'s the weather forecast for London for the next 7 days?')">
+                                <span class="feature-icon">⛅</span>
+                                <span class="feature-title">Weather</span>
+                                <span class="feature-desc">16-day forecasts</span>
+                            </div>
+                            <div class="feature-item" onclick="sendQuickMessage('Show me today\'s NASA APOD and summarize it')">
+                                <span class="feature-icon">🌌</span>
+                                <span class="feature-title">NASA APOD</span>
+                                <span class="feature-desc">Daily space imagery</span>
+                            </div>
+                            <div class="feature-item" onclick="sendQuickMessage('What was the air quality in Paris last week?')">
+                                <span class="feature-icon">📈</span>
+                                <span class="feature-title">Historical</span>
+                                <span class="feature-desc">Past 92 days</span>
                             </div>
                         </div>
                     </div>
                 </div>
 
                 <!-- Input Area -->
-                <div class="input-area">
-                    <form id="chatForm" onsubmit="handleSubmit(event)">
-                        <input 
-                            type="text" 
-                            id="messageInput" 
-                            placeholder="Ask about air quality or NASA APOD..." 
-                            autocomplete="off"
-                            required
-                        >
-                        <button type="submit" id="sendBtn">
-                            <span class="send-icon">➤</span>
-                        </button>
+                <div class="input-container">
+                    <form id="chatForm" class="chat-form" onsubmit="handleSubmit(event)">
+                        <div class="input-wrapper">
+                            <input 
+                                type="text" 
+                                id="messageInput" 
+                                placeholder="Ask about air quality, weather, or NASA APOD..." 
+                                autocomplete="off"
+                                required
+                            >
+                            <button type="submit" id="sendBtn" class="send-btn">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M22,2L11,13"></path>
+                                    <path d="M22,2L15,22L11,13L2,9L22,2Z"></path>
+                                </svg>
+                            </button>
+                        </div>
+                        <div class="input-hint">
+                            Press <kbd>Enter</kbd> to send • Try "Air quality in Tokyo" or "NASA APOD"
+                        </div>
                     </form>
                 </div>
-            </section>
-
-            <!-- Info Panel -->
-            <aside class="info-panel">
-                <div class="info-card">
-                    <h3>📍 Quick Analysis</h3>
-                    <form id="analyzeForm" onsubmit="handleAnalyze(event)">
-                        <div class="form-group">
-                            <label for="cityName">City Name</label>
-                            <input type="text" id="cityName" placeholder="e.g., Paris, Tokyo, Sofia" value="Sofia" required>
-                        </div>
-                        <div class="form-group">
-                            <label for="hours">Forecast Hours</label>
-                            <input type="number" id="hours" value="6" min="1" max="72" required>
-                        </div>
-                        <button type="submit" class="analyze-btn">Analyze Air Quality</button>
-                    </form>
-                </div>
-
-                <div class="info-card">
-                    <h3>🌟 NASA APOD</h3>
-                    <button onclick="fetchAPOD()" class="apod-btn">Get Today's Picture</button>
-                    <div id="apodPreview" class="apod-preview"></div>
-                </div>
-
-                <div class="info-card">
-                    <h3>ℹ️ About</h3>
-                    <p class="attribution">Weather data by <a href="https://open-meteo.com/" target="_blank">Open-Meteo.com</a></p>
-                    <p class="attribution">Images from <a href="https://apod.nasa.gov/" target="_blank">NASA APOD</a></p>
-                    <p class="version">Version 1.0.0</p>
-                </div>
-            </aside>
+            </div>
         </main>
+
+        <!-- Quick Panel (Right Side) -->
+        <aside class="quick-panel">
+            <div class="panel-card">
+                <div class="panel-header">
+                    <span class="panel-icon">📍</span>
+                    <h3>Quick Analysis</h3>
+                </div>
+                <form id="analyzeForm" onsubmit="handleAnalyze(event)">
+                    <div class="form-field">
+                        <label for="cityName">Location</label>
+                        <input type="text" id="cityName" placeholder="e.g., Paris, Tokyo" value="Sofia">
+                    </div>
+                    <div class="form-field">
+                        <label for="hours">Hours</label>
+                        <div class="range-input">
+                            <input type="range" id="hours" min="1" max="72" value="6" oninput="updateHoursLabel(this.value)">
+                            <span id="hoursLabel">6h</span>
+                        </div>
+                    </div>
+                    <button type="submit" class="panel-btn primary">
+                        <span>Analyze</span>
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M5,12H19M12,5L19,12L12,19"></path>
+                        </svg>
+                    </button>
+                </form>
+            </div>
+
+            <div class="panel-card">
+                <div class="panel-header">
+                    <span class="panel-icon">🌟</span>
+                    <h3>NASA APOD</h3>
+                </div>
+                <button onclick="fetchAPOD()" class="panel-btn secondary">
+                    <span>Get Today's Picture</span>
+                </button>
+                <div id="apodPreview" class="apod-preview"></div>
+            </div>
+
+            <div class="panel-card stats-card">
+                <div class="stat-item">
+                    <span class="stat-value" id="messagesCount">0</span>
+                    <span class="stat-label">Messages</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-value" id="queriesCount">0</span>
+                    <span class="stat-label">Queries</span>
+                </div>
+            </div>
+        </aside>
     </div>
 
     <script>
-        const API_BASE = '';  // Same origin
+        const API_BASE = '';
         const chatContainer = document.getElementById('chatContainer');
         const messageInput = document.getElementById('messageInput');
         const sendBtn = document.getElementById('sendBtn');
+        let messageCount = 0;
+        let queryCount = 0;
+
+        // Theme handling
+        function toggleTheme() {
+            document.body.classList.toggle('dark-theme');
+            localStorage.setItem('theme', document.body.classList.contains('dark-theme') ? 'dark' : 'light');
+        }
+
+        // Load saved theme
+        if (localStorage.getItem('theme') === 'dark') {
+            document.body.classList.add('dark-theme');
+        }
+
+        // Sidebar toggle for mobile
+        function toggleSidebar() {
+            document.querySelector('.sidebar').classList.toggle('open');
+        }
+
+        function showChat() {
+            document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
+            event.target.closest('.nav-btn').classList.add('active');
+        }
+
+        // Update hours label
+        function updateHoursLabel(value) {
+            document.getElementById('hoursLabel').textContent = value + 'h';
+        }
 
         // Add message to chat
         function addMessage(content, isUser = false, isLoading = false) {
+            // Hide welcome card on first message
+            const welcomeCard = document.querySelector('.welcome-card');
+            if (welcomeCard) welcomeCard.style.display = 'none';
+
             const messageDiv = document.createElement('div');
             messageDiv.className = `message ${isUser ? 'user' : 'assistant'}`;
             
             if (isLoading) {
                 messageDiv.id = 'loadingMessage';
                 messageDiv.innerHTML = `
-                    <div class="message-avatar">🤖</div>
-                    <div class="message-content">
-                        <div class="loading-dots">
+                    <div class="message-bubble">
+                        <div class="typing-indicator">
                             <span></span><span></span><span></span>
                         </div>
                     </div>
                 `;
             } else {
+                const avatar = isUser 
+                    ? '<div class="avatar user-avatar">You</div>'
+                    : '<div class="avatar ai-avatar">AI</div>';
+                
                 messageDiv.innerHTML = `
-                    <div class="message-avatar">${isUser ? '👤' : '🤖'}</div>
-                    <div class="message-content">${formatMessage(content)}</div>
+                    ${avatar}
+                    <div class="message-bubble">
+                        <div class="message-text">${formatMessage(content)}</div>
+                        <div class="message-time">${new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</div>
+                    </div>
                 `;
+                
+                messageCount++;
+                document.getElementById('messagesCount').textContent = messageCount;
             }
             
             chatContainer.appendChild(messageDiv);
@@ -131,33 +293,34 @@
             return messageDiv;
         }
 
-        // Remove loading message
         function removeLoading() {
             const loading = document.getElementById('loadingMessage');
             if (loading) loading.remove();
         }
 
-        // Format message content (supports markdown-like formatting)
         function formatMessage(content) {
-            // Convert markdown-like syntax
+            // Enhanced markdown-like formatting
             content = content
                 .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                .replace(/\*(.*?)\*/g, '<em>$1</em>')
+                .replace(/`(.*?)`/g, '<code>$1</code>')
+                .replace(/\n\n/g, '</p><p>')
                 .replace(/\n/g, '<br>')
-                .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank">$1</a>');
+                .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>')
+                .replace(/📍(.*?)(?=\n|$)/g, '<div class="location-badge">📍$1</div>')
+                .replace(/(✅|⚠️|❌)\s*(Safe|Caution|Unsafe)/g, '<span class="safety-badge $2">$1 $2</span>');
+            
             return `<p>${content}</p>`;
         }
 
-        // Send message to chat endpoint
         async function sendMessage(message) {
-            // Add user message
             addMessage(message, true);
-            
-            // Show loading
             addMessage('', false, true);
             
-            // Disable input
             messageInput.disabled = true;
             sendBtn.disabled = true;
+            queryCount++;
+            document.getElementById('queriesCount').textContent = queryCount;
             
             try {
                 const response = await fetch(`${API_BASE}/chat`, {
@@ -168,16 +331,14 @@
                 
                 removeLoading();
                 
-                if (!response.ok) {
-                    throw new Error(`HTTP ${response.status}`);
-                }
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
                 
                 const data = await response.json();
                 addMessage(data.response);
                 
             } catch (error) {
                 removeLoading();
-                addMessage(`❌ Error: ${error.message}. Please try again.`);
+                addMessage(`❌ **Error:** ${error.message}. Please try again.`);
             } finally {
                 messageInput.disabled = false;
                 sendBtn.disabled = false;
@@ -185,7 +346,6 @@
             }
         }
 
-        // Handle form submit
         function handleSubmit(event) {
             event.preventDefault();
             const message = messageInput.value.trim();
@@ -195,28 +355,26 @@
             }
         }
 
-        // Quick message button
         function sendQuickMessage(message) {
             messageInput.value = message;
             sendMessage(message);
             messageInput.value = '';
+            
+            // Close sidebar on mobile
+            document.querySelector('.sidebar').classList.remove('open');
         }
 
-        // Handle direct analyze form
         async function handleAnalyze(event) {
             event.preventDefault();
-            
             const cityName = document.getElementById('cityName').value.trim();
-            const hours = parseInt(document.getElementById('hours').value);
-            
+            const hours = document.getElementById('hours').value;
             const message = `What's the air quality in ${cityName} for the next ${hours} hours? Is it safe to run outdoors?`;
             sendMessage(message);
         }
 
-        // Fetch APOD directly
         async function fetchAPOD() {
             const previewDiv = document.getElementById('apodPreview');
-            previewDiv.innerHTML = '<p class="loading">Loading...</p>';
+            previewDiv.innerHTML = '<div class="loading-spinner"></div>';
             
             try {
                 const response = await fetch(`${API_BASE}/apod/today`);
@@ -225,23 +383,68 @@
                 const data = await response.json();
                 
                 previewDiv.innerHTML = `
-                    <div class="apod-card">
-                        <img src="${data.url}" alt="${data.title}" class="apod-image" onclick="window.open('${data.hdurl || data.url}', '_blank')">
-                        <h4>${data.title}</h4>
-                        <p class="apod-summary">${data.summary || ''}</p>
+                    <div class="apod-mini">
+                        <img src="${data.url}" alt="${data.title}" onclick="window.open('${data.hdurl || data.url}', '_blank')">
+                        <p class="apod-title">${data.title}</p>
                     </div>
                 `;
                 
-                // Also add to chat
-                addMessage(`🌟 **${data.title}**\n\n${data.summary || data.explanation.substring(0, 200) + '...'}\n\n[View Full Image](${data.hdurl || data.url})\n\n_${data.attribution}_`);
+                addMessage(`🌟 **${data.title}**\n\n${data.summary || data.explanation.substring(0, 300) + '...'}\n\n[View Full Image](${data.hdurl || data.url})\n\n_${data.attribution}_`);
                 
             } catch (error) {
-                previewDiv.innerHTML = `<p class="error">Failed to load APOD: ${error.message}</p>`;
+                previewDiv.innerHTML = `<p class="error-text">Failed to load: ${error.message}</p>`;
             }
+        }
+
+        function clearChat() {
+            chatContainer.innerHTML = '';
+            messageCount = 0;
+            queryCount = 0;
+            document.getElementById('messagesCount').textContent = '0';
+            document.getElementById('queriesCount').textContent = '0';
+            
+            // Re-add welcome card
+            chatContainer.innerHTML = `
+                <div class="welcome-card">
+                    <div class="welcome-icon">👋</div>
+                    <h3>Welcome to Air & Insights Agent</h3>
+                    <p>Your AI-powered assistant for air quality analysis, weather forecasts, and NASA's Astronomy Picture of the Day.</p>
+                    <div class="feature-grid">
+                        <div class="feature-item" onclick="sendQuickMessage('What is the air quality in Sofia for the next 6 hours? Is it safe to run outdoors?')">
+                            <span class="feature-icon">🌬️</span>
+                            <span class="feature-title">Air Quality</span>
+                            <span class="feature-desc">Real-time AQI data</span>
+                        </div>
+                        <div class="feature-item" onclick="sendQuickMessage('What\\'s the weather forecast for London for the next 7 days?')">
+                            <span class="feature-icon">⛅</span>
+                            <span class="feature-title">Weather</span>
+                            <span class="feature-desc">16-day forecasts</span>
+                        </div>
+                        <div class="feature-item" onclick="sendQuickMessage('Show me today\\'s NASA APOD and summarize it')">
+                            <span class="feature-icon">🌌</span>
+                            <span class="feature-title">NASA APOD</span>
+                            <span class="feature-desc">Daily space imagery</span>
+                        </div>
+                        <div class="feature-item" onclick="sendQuickMessage('What was the air quality in Paris last week?')">
+                            <span class="feature-icon">📈</span>
+                            <span class="feature-title">Historical</span>
+                            <span class="feature-desc">Past 92 days</span>
+                        </div>
+                    </div>
+                </div>
+            `;
         }
 
         // Focus input on load
         window.onload = () => messageInput.focus();
+
+        // Keyboard shortcuts
+        document.addEventListener('keydown', (e) => {
+            if (e.key === '/' && document.activeElement !== messageInput) {
+                e.preventDefault();
+                messageInput.focus();
+            }
+        });
     </script>
 </body>
 </html>

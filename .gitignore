@@ -60,6 +60,3 @@ logs/
 .DS_Store
 Thumbs.db
 
-# Project specific
-docs/screenshots/*.png
-docs/screenshots/*.jpg

@@ -71,34 +71,66 @@ FUTURE (hours from now) - DO NOT set past_days:
 - Maximum future: 384 hours (16 days)
 - IMPORTANT: For ANY future query ("next", "upcoming", "will be", "tomorrow"), DO NOT return past_days!
 
-PAST (past_days for historical data):
+HOLIDAYS (calculate hours from current date):
+- "christmas" / "xmas" → hours until December 25
+- "new year" / "new years" → hours until January 1
+- "easter" → hours until Easter
+
+PAST / HISTORICAL DATA (set past_days > 0):
 - "yesterday" → hours: 24, past_days: 1
 - "last X days" / "past X days" → hours: X × 24, past_days: X (max 92)
-- "last week" → hours: 168, past_days: 7
+- "last week" / "past week" → hours: 168, past_days: 7
 - "last X weeks" → hours: X × 168, past_days: X × 7 (max 92)
-- "last month" → hours: 720, past_days: 30
+- "last month" / "past month" → hours: 720, past_days: 30
 - "last X months" / "past X months" → past_days: X × 30 (max 92)
+- "X days ago" → hours: 24, past_days: X
+- "how was the weather yesterday" → hours: 24, past_days: 1
+- "what was the air quality last week" → hours: 168, past_days: 7
 - Maximum past: 92 days (API limit)
+
+HISTORICAL EXAMPLES (always set past_days for these):
+- "weather yesterday in Sofia" → intent: "forecast", location: "Sofia", hours: 24, past_days: 1
+- "air quality last week in Paris" → intent: "analyze", location: "Paris", hours: 168, past_days: 7
+- "how was the weather last month" → intent: "forecast", hours: 720, past_days: 30
+- "past 3 days weather in London" → intent: "forecast", location: "London", hours: 72, past_days: 3
+- "was the air good yesterday" → intent: "analyze", hours: 24, past_days: 1
 
 Word numbers: "two"=2, "three"=3, "couple"=2, "few"=3
 IMPORTANT: Never return hours: 0, minimum is 1
 
-INTENT:
+INTENT - BE VERY CAREFUL:
+- "greeting" → ONLY for pure greetings with NO weather/air content:
+  - "hi", "hello", "hey", "how are you", "good morning", "what's up"
+  - These are GREETINGS, not weather queries!
+- "unknown" → For queries we CANNOT answer:
+  - "what is today's date" → unknown (we don't have date info to share)
+  - "what time is it" → unknown (we don't have time info)
+  - "who are you" → unknown (meta question)
+  - Math questions, jokes, personal requests → unknown
 - "analyze" → air quality, PM2.5, PM10, pollution, safe to exercise, safe to run
 - "forecast" → weather, temperature, rain, sunny, cold, hot
-- "apod" → NASA, astronomy, space picture, "nasa pic", "the picture", "today's picture", "give me the picture"
+- "apod" → NASA, astronomy, space picture, "nasa pic", "the picture", "today's picture"
 - "help" → help, what can you do
-- "greeting" → hi, hello, how are you (ONLY if no other weather/air content)
-- "unknown" → OFF-TOPIC queries that are NOT about weather, air quality, or APOD
-  Examples of "unknown": math questions, personal requests, jokes, fixing things, drawing
+
+CRITICAL - GREETING vs WEATHER:
+- "how are you" → greeting (NOT weather!)
+- "how is the weather" → forecast
+- "what is today's date" → unknown (NOT weather!)
+- "what is today's weather" → forecast
+- "hi, check Sofia air" → analyze (NOT greeting, has weather content)
 
 CRITICAL - FOLLOW-UP & CONTEXT RULES:
-1. ONLY mark is_followup: true if query is CLEARLY about weather/air quality/location
+1. ONLY mark is_followup: true if query is CLEARLY about weather/air quality/location/time
 2. OFF-TOPIC queries (math, jokes, personal requests) → intent: "unknown", is_followup: false
-3. "what about X" where X is a location/time → is_followup: true
+3. "what about X" where X is a location/city → is_followup: true, use PREVIOUS intent (analyze/forecast)
 4. "what about X" where X is off-topic → intent: "unknown", is_followup: false
 5. For valid follow-ups, PRESERVE previous intent unless explicitly changed
 6. For follow-ups with NO time mentioned → hours: null (will use previous)
+7. LOCATION FOLLOW-UPS: "what about Paris?", "and London?", "how about NYC?" → 
+   These are asking for the SAME analysis (air quality/weather) for a NEW location.
+   Set is_followup: true, location: <new city>, intent: <previous intent>
+8. TIME FOLLOW-UPS: When user asks for a different time period after a weather/air query,
+   it's a follow-up! Examples: "for the next 2 weeks", "what about tomorrow", "and yesterday?"
 
 EXAMPLES of "unknown" (NOT follow-ups):
 - "how much is 1+1?" → unknown (math, not weather)
@@ -107,16 +139,19 @@ EXAMPLES of "unknown" (NOT follow-ups):
 - "tell me a joke" → unknown (entertainment)
 - "can you draw a board?" → unknown (visualization request - we can't draw)
 
-OUTPUT (JSON only):
-{
-  "intent": "analyze|forecast|apod|help|greeting|unknown",
-  "location": "city" or null,
-  "coordinates": [lat, lon] or null,
-  "hours": <integer or null if follow-up with no new time>,
-  "past_days": <integer 0-92>,
-  "is_followup": true|false,
-  "needs_location": true|false
-}"""
+EXAMPLES of LOCATION FOLLOW-UPS (previous intent was "analyze"):
+- "what about Plovdiv?" → intent: "analyze", location: "Plovdiv", is_followup: true
+- "and Paris?" → intent: "analyze", location: "Paris", is_followup: true
+- "how about London?" → intent: "analyze", location: "London", is_followup: true
+
+EXAMPLES of TIME FOLLOW-UPS (previous intent was "analyze" or "forecast"):
+- "for the next 2 weeks" → intent: <previous>, hours: 336, is_followup: true
+- "can you give me for the next 2 weeks" → intent: <previous>, hours: 336, is_followup: true  
+- "what about tomorrow" → intent: <previous>, hours: 24, is_followup: true
+- "and for the next 3 days" → intent: <previous>, hours: 72, is_followup: true
+
+RESPOND WITH ONLY A JSON OBJECT - NO EXPLANATION, NO TEXT BEFORE OR AFTER:
+{"intent": "...", "location": "...", "coordinates": null, "hours": 6, "past_days": 0, "is_followup": false, "needs_location": false}"""
 
     def __init__(self, llm_client: Optional[LLMClient] = None):
         self.llm = llm_client or LLMClient()
@@ -129,11 +164,11 @@ OUTPUT (JSON only):
             # Build context-aware prompt
             prompt = self._build_prompt(query, context)
             
-            # Single LLM call
+            # Single LLM call - increased max_tokens for complete JSON
             response = await self.llm.chat([
                 {"role": "system", "content": self.SYSTEM_PROMPT},
                 {"role": "user", "content": prompt}
-            ], temperature=0.1, max_tokens=150)
+            ], temperature=0.1, max_tokens=300)
             
             return self._parse_response(response, query, context)
             
@@ -161,11 +196,16 @@ CONVERSATION CONTEXT (use for follow-ups):
     
     def _parse_response(self, response: str, query: str, context: dict) -> ParsedQuery:
         """Parse LLM JSON response."""
-        # Clean markdown
+        # Clean markdown and extract JSON
         response = response.strip()
         if "```" in response:
             response = re.sub(r'```(?:json)?\n?', '', response)
             response = response.replace('```', '')
+        
+        # Try to extract JSON object from response (handles "Here is the JSON:" prefix)
+        json_match = re.search(r'\{[^{}]*\}', response, re.DOTALL)
+        if json_match:
+            response = json_match.group()
         
         try:
             result = json.loads(response.strip())
@@ -173,7 +213,7 @@ CONVERSATION CONTEXT (use for follow-ups):
             logger.warning(f"Invalid JSON: {response[:100]}")
             return self._safe_mode_parse(query, context)
         
-        # Extract coordinates
+        # Extract coordinates from LLM response
         coordinates = None
         if result.get("coordinates"):
             coords = result["coordinates"]
@@ -184,6 +224,13 @@ CONVERSATION CONTEXT (use for follow-ups):
                         coordinates = (lat, lon)
                 except (ValueError, TypeError):
                     pass
+        
+        # IMPORTANT: If LLM didn't extract coordinates, try regex extraction from query
+        # This ensures explicit coordinates like "42.6977, 23.3219" are always captured
+        if not coordinates:
+            coordinates = self._extract_coordinates(query)
+            if coordinates:
+                logger.info(f"Extracted coordinates from query text: {coordinates}")
         
         # Apply context for follow-ups
         location = result.get("location")
@@ -220,8 +267,25 @@ CONVERSATION CONTEXT (use for follow-ups):
         hours = min(hours, 384)
         past_days = min(past_days, 92)
         
+        # If explicit coordinates were provided in the query, this is NOT a follow-up
+        # (user is specifying a new location via coordinates)
+        if coordinates:
+            is_followup = False
+        
+        # IMPORTANT: If a location NAME is specified, clear any coordinates
+        # The location will be geocoded by the routes handler
+        # This prevents context coordinates from overriding a new city name
+        if location and coordinates:
+            # Check if coordinates were NOT extracted from query text
+            query_coords = self._extract_coordinates(query)
+            if not query_coords:
+                # Coordinates came from LLM using context, but user specified a city name
+                # Clear them so the city gets geocoded
+                logger.info(f"Clearing context coordinates - user specified location: {location}")
+                coordinates = None
+        
         if is_followup:
-            # Preserve location from context
+            # Preserve location from context ONLY if no new location specified
             if not location and not coordinates:
                 location = context.get("last_location")
                 coordinates = context.get("last_coords")
@@ -248,6 +312,64 @@ CONVERSATION CONTEXT (use for follow-ups):
         return parsed
     
     # ==========================================================================
+    # FALLBACK PATTERNS - Enhanced regex for common queries when LLM fails
+    # ==========================================================================
+    
+    # Pattern format: (regex, intent, location_group_index)
+    # These provide robust fallback for common query formats
+    FALLBACK_PATTERNS = [
+        # Weather/Forecast queries
+        (r'(?:weather|forecast)\s+(?:in|for|at)\s+([a-zA-Z\s]+?)(?:\s+for|\s*$)', 'forecast', 1),
+        (r'(?:what|how)(?:\'?s| is| will be)\s+(?:the\s+)?weather\s+(?:in|for|at)\s+([a-zA-Z\s]+)', 'forecast', 1),
+        (r'(?:is|will)\s+it\s+(?:rain|cold|hot|sunny|cloudy)\s+(?:in|at)\s+([a-zA-Z\s]+)', 'forecast', 1),
+        (r'temperature\s+(?:in|for|at)\s+([a-zA-Z\s]+)', 'forecast', 1),
+        
+        # Air quality queries
+        (r'air\s*quality\s+(?:in|for|at)\s+([a-zA-Z\s]+)', 'analyze', 1),
+        (r'(?:pm2\.?5|pm10|pollution|aqi)\s+(?:in|for|at)\s+([a-zA-Z\s]+)', 'analyze', 1),
+        (r'(?:is|can)\s+(?:it|i)\s+(?:safe|ok|good)\s+to\s+(?:run|exercise|jog|walk)\s+(?:in|at|outside)?\s*([a-zA-Z\s]*)', 'analyze', 1),
+        (r'(?:should|can)\s+i\s+(?:go\s+)?(?:run|exercise|jog)\s+(?:in|at)?\s*([a-zA-Z\s]*)', 'analyze', 1),
+        
+        # NASA APOD queries
+        (r'(?:nasa|astronomy)\s*(?:\'?s)?\s*(?:picture|photo|image|apod)', 'apod', None),
+        (r'(?:picture|photo|image)\s+of\s+the\s+day', 'apod', None),
+        (r'(?:show|get|fetch)\s+(?:me\s+)?(?:the\s+)?(?:nasa|astronomy|space)\s*(?:picture|photo|image)', 'apod', None),
+        
+        # Historical data queries
+        (r'(?:weather|air\s*quality)\s+yesterday\s+(?:in|at|for)\s+([a-zA-Z\s]+)', None, 1),  # intent determined by keywords
+        (r'(?:how|what)\s+was\s+(?:the\s+)?(?:weather|air\s*quality)\s+(?:in|at)\s+([a-zA-Z\s]+)\s+(?:yesterday|last)', None, 1),
+    ]
+    
+    def _try_fallback_patterns(self, query: str, query_lower: str) -> Optional[Tuple[str, Optional[str]]]:
+        """
+        Try regex fallback patterns for common query formats.
+        
+        Returns: (intent, location) tuple or None if no pattern matches
+        """
+        for pattern, intent, loc_group in self.FALLBACK_PATTERNS:
+            match = re.search(pattern, query_lower)
+            if match:
+                # Determine intent if not fixed
+                if intent is None:
+                    if 'air' in query_lower or 'quality' in query_lower or 'pm' in query_lower:
+                        intent = 'analyze'
+                    else:
+                        intent = 'forecast'
+                
+                # Extract location if pattern has a location group
+                location = None
+                if loc_group is not None and match.lastindex >= loc_group:
+                    loc = match.group(loc_group).strip()
+                    if loc and len(loc) > 1:
+                        # Capitalize properly
+                        location = ' '.join(word.capitalize() for word in loc.split())
+                
+                logger.info(f"Fallback pattern matched: intent={intent}, location={location}")
+                return (intent, location)
+        
+        return None
+    
+    # ==========================================================================
     # SAFE MODE - Minimal parsing when LLM unavailable
     # ==========================================================================
     
@@ -255,11 +377,18 @@ CONVERSATION CONTEXT (use for follow-ups):
         """Safe mode: basic regex parsing when LLM offline."""
         query_lower = query.lower()
         
+        # Try fallback patterns first for better accuracy
+        fallback_result = self._try_fallback_patterns(query, query_lower)
+        if fallback_result:
+            fb_intent, fb_location = fallback_result
+        else:
+            fb_intent, fb_location = None, None
+        
         # 1. Coordinates (always reliable)
         coordinates = self._extract_coordinates(query)
         
-        # 2. Intent detection (pass context for smart resolution)
-        intent = self._detect_intent(query_lower, context)
+        # 2. Intent detection - use fallback pattern result if available
+        intent = fb_intent if fb_intent else self._detect_intent(query_lower, context)
         
         # 3. Time extraction (hours and past_days)
         hours, past_days = self._extract_time(query_lower)
@@ -271,8 +400,8 @@ CONVERSATION CONTEXT (use for follow-ups):
             "next", "upcoming", "coming", "tomorrow", "will be", "forecast", "this week"
         ])
         
-        # 5. Location extraction
-        location = self._extract_location(query)
+        # 5. Location extraction - use fallback pattern result if available
+        location = fb_location if fb_location else self._extract_location(query)
         
         # 6. Follow-up detection - also short queries are follow-ups
         is_short_query = len(query.split()) <= 4
@@ -289,7 +418,7 @@ CONVERSATION CONTEXT (use for follow-ups):
             
             # Preserve intent unless explicitly changed
             if intent == "unknown":
-                intent = context.get("last_intent", "analyze")
+                intent = context.get("last_intent") or "analyze"  # Default to analyze if no context
             
             # Preserve time period if not specified in this query
             # BUT if this is a future query, do NOT use context's past_days
@@ -328,6 +457,31 @@ CONVERSATION CONTEXT (use for follow-ups):
         context = context or {}
         last_intent = context.get("last_intent", "")
         
+        # GREETING - Must come first for proper detection
+        # Match conversational patterns that are NOT about weather/air
+        greeting_patterns = [
+            r'^(hi|hello|hey)[\s!.?]*$',  # Simple greetings
+            r'^how are you',              # How are you?
+            r"^what'?s up",               # What's up?
+            r'^good (morning|afternoon|evening)',  # Time-based greetings
+        ]
+        for pattern in greeting_patterns:
+            if re.match(pattern, q):
+                return "greeting"
+        
+        # GENERAL QUESTIONS - Not about weather (intent: unknown)
+        general_question_patterns = [
+            r"what('?s| is) (today'?s?|the) date",  # What is today's date
+            r"what time is it",            # What time is it
+            r"who are you",                # Who are you
+            r"what are you",               # What are you
+            r"tell me (a joke|about yourself)",  # Tell me a joke
+            r"can you (draw|sing|dance)",  # Can you draw/sing
+        ]
+        for pattern in general_question_patterns:
+            if re.search(pattern, q):
+                return "unknown"
+        
         # APOD - explicit keywords (high confidence)
         if any(k in q for k in ["apod", "astronomy picture", "picture of the day", "nasa pic", "nasa picture", "nasa photo"]):
             return "apod"
@@ -338,11 +492,13 @@ CONVERSATION CONTEXT (use for follow-ups):
         
         if any(k in q for k in ["help", "what can you"]):
             return "help"
-        if re.match(r'^(hi|hello|hey)[\s!.?]*$', q):
-            return "greeting"
-        if any(k in q for k in ["air quality", "pm2.5", "pm10", "pollution", "safe to run", "safe to exercise"]):
+        
+        # Normalize hyphens to spaces for matching
+        q_normalized = q.replace("-", " ")
+        
+        if any(k in q_normalized for k in ["air quality", "pm2.5", "pm10", "pollution", "safe to run", "safe to exercise", "aqi"]):
             return "analyze"
-        if any(k in q for k in ["weather", "forecast", "temperature", "rain", "cold", "hot"]):
+        if any(k in q_normalized for k in ["weather", "forecast", "temperature", "rain", "cold", "hot"]):
             return "forecast"
         return "unknown"
     
@@ -446,6 +602,33 @@ CONVERSATION CONTEXT (use for follow-ups):
         if "fortnight" in q: return (336, 0)
         if "tomorrow" in q: return (24, 0)
         if "today" in q: return (12, 0)
+        
+        # Holiday dates - calculate hours until the holiday
+        now = datetime.now()
+        current_year = now.year
+        
+        # Christmas (December 25)
+        if "christmas" in q:
+            christmas = datetime(current_year, 12, 25)
+            if christmas < now:
+                christmas = datetime(current_year + 1, 12, 25)
+            hours_until = int((christmas - now).total_seconds() / 3600)
+            return (max(1, min(hours_until, 384)), 0)
+        
+        # New Year (January 1)
+        if "new year" in q:
+            new_year = datetime(current_year + 1, 1, 1)
+            hours_until = int((new_year - now).total_seconds() / 3600)
+            return (max(1, min(hours_until, 384)), 0)
+        
+        # Easter (approximate - first Sunday after first full moon after March 21)
+        # Simplified: Use April 20 as average Easter date
+        if "easter" in q:
+            easter = datetime(current_year, 4, 20)
+            if easter < now:
+                easter = datetime(current_year + 1, 4, 20)
+            hours_until = int((easter - now).total_seconds() / 3600)
+            return (max(1, min(hours_until, 384)), 0)
         
         return (6, 0)  # Default: 6 hours future
     

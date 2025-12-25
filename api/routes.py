@@ -118,6 +118,112 @@ async def llm_status():
     }
 
 
+@router.get("/status/rate-limits", tags=["System"])
+async def rate_limits_status():
+    """
+    Check rate limit status for all LLM providers.
+    
+    Returns:
+    - GitHub Models: Limited to ~150 requests/day (free tier)
+    - Ollama: Unlimited (local)
+    
+    Useful for monitoring API usage and planning fallback strategies.
+    """
+    import httpx
+    from llm.client import LLMClient
+    
+    client = LLMClient()
+    status = {
+        "github_models": {
+            "provider": "GitHub Models (Azure)",
+            "model": client.github_model,
+            "rate_limit": "~150 requests/day (free tier)",
+            "status": "unknown",
+            "available": False,
+            "reset_info": None,
+        },
+        "ollama": {
+            "provider": "Ollama (local)",
+            "model": client.ollama_model,
+            "rate_limit": "unlimited",
+            "status": "unknown",
+            "available": False,
+        },
+        "active_provider": None,
+        "recommendation": None,
+    }
+    
+    # Check GitHub Models availability
+    if client.github_api_key:
+        try:
+            # Make a minimal test request to check rate limits
+            async with httpx.AsyncClient(timeout=5.0) as http_client:
+                response = await http_client.post(
+                    f"{client.GITHUB_MODELS_ENDPOINT}/chat/completions",
+                    headers={
+                        "Authorization": f"Bearer {client.github_api_key}",
+                        "Content-Type": "application/json",
+                    },
+                    json={
+                        "model": client.github_model,
+                        "messages": [{"role": "user", "content": "hi"}],
+                        "max_tokens": 1,
+                    }
+                )
+                
+                if response.status_code == 200:
+                    status["github_models"]["status"] = "available"
+                    status["github_models"]["available"] = True
+                    status["active_provider"] = "github_models"
+                elif response.status_code == 429:
+                    status["github_models"]["status"] = "rate_limited"
+                    # Try to extract reset time from headers
+                    retry_after = response.headers.get("Retry-After")
+                    if retry_after:
+                        try:
+                            seconds = int(retry_after)
+                            hours = seconds // 3600
+                            minutes = (seconds % 3600) // 60
+                            status["github_models"]["reset_info"] = f"Resets in ~{hours}h {minutes}m"
+                        except ValueError:
+                            status["github_models"]["reset_info"] = f"Retry after: {retry_after}"
+                else:
+                    status["github_models"]["status"] = f"error ({response.status_code})"
+        except Exception as e:
+            status["github_models"]["status"] = f"error: {str(e)[:50]}"
+    else:
+        status["github_models"]["status"] = "no_api_key"
+    
+    # Check Ollama availability
+    try:
+        async with httpx.AsyncClient(timeout=3.0) as http_client:
+            response = await http_client.get(f"{client.ollama_endpoint}/api/tags")
+            if response.status_code == 200:
+                models = response.json().get("models", [])
+                model_names = [m.get("name", "").split(":")[0] for m in models]
+                
+                if client.ollama_model in model_names:
+                    status["ollama"]["status"] = "available"
+                    status["ollama"]["available"] = True
+                    status["ollama"]["installed_models"] = model_names
+                    if not status["github_models"]["available"]:
+                        status["active_provider"] = "ollama"
+                else:
+                    status["ollama"]["status"] = f"model_not_found (available: {model_names})"
+    except Exception as e:
+        status["ollama"]["status"] = f"not_running: {str(e)[:30]}"
+    
+    # Set recommendation
+    if status["github_models"]["available"]:
+        status["recommendation"] = "GitHub Models available - primary provider active"
+    elif status["ollama"]["available"]:
+        status["recommendation"] = "Using Ollama fallback - GitHub Models rate limited or unavailable"
+    else:
+        status["recommendation"] = "⚠️ No LLM available! Start Ollama: `ollama serve` then `ollama pull llama3.2`"
+    
+    return status
+
+
 # =============================================================================
 # Air Quality Analysis Endpoint
 # =============================================================================
@@ -251,6 +357,22 @@ async def chat(request: ChatRequest) -> ChatResponse:
     parsed = await parser.parse(query, context.to_dict())
     logger.info(f"Parsed: intent={parsed.intent}, loc={parsed.location}, hours={parsed.hours}, past_days={parsed.past_days}, followup={parsed.is_followup}")
     
+    # Smart recovery: If LLM returns "unknown" but query looks like a time-based follow-up
+    # and we have weather context, treat it as a weather follow-up
+    if parsed.intent == "unknown" and context.last_intent in ["analyze", "forecast"]:
+        query_lower = query.lower()
+        time_patterns = ["week", "day", "hour", "tomorrow", "yesterday", "month", "2 week", "3 day"]
+        if any(p in query_lower for p in time_patterns):
+            logger.info(f"Smart recovery: treating '{query}' as time-based follow-up")
+            # Re-parse with forced follow-up context
+            parsed.intent = context.last_intent
+            parsed.is_followup = True
+            # Extract time from query
+            hours, past_days = parser._extract_time(query_lower)
+            if hours != 6 or past_days != 0:  # Time was extracted
+                parsed.hours = hours
+                parsed.past_days = past_days
+    
     # Handle by intent
     if parsed.intent == "apod":
         return await _handle_apod(agent, context)
@@ -323,10 +445,12 @@ async def _handle_weather_query(
             coords = geo_result.coords
             location_name = geo_result.location_name
     
-    # Use context coordinates if no new location
-    if not coords and context.last_coords:
+    # Use context coordinates ONLY if this is a follow-up with a location in context
+    # Don't silently use old coordinates for new queries without location
+    if not coords and parsed.is_followup and context.last_coords:
         coords = context.last_coords
         location_name = context.last_location
+        logger.info(f"Using context location for follow-up: {location_name}")
     
     # Still no location - ask for one
     if not coords:

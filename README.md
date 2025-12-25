@@ -1,293 +1,203 @@
 # 🌤️ Air & Insights Agent
 
+> **AI Adoption Specialist Task Submission** 
+> Author: Alexander Videnov | December 2025
+
 An **agentic AI assistant** that fetches weather & air quality data from free public APIs, reasons about it with a free LLM (GitHub Models), and provides actionable guidance for outdoor activities.
 
-![Version](https://img.shields.io/badge/version-1.0.0-blue)
 ![Python](https://img.shields.io/badge/python-3.11+-green)
-![License](https://img.shields.io/badge/license-MIT-gray)
+![Tests](https://img.shields.io/badge/tests-652%20passed-brightgreen)
+![Coverage](https://img.shields.io/badge/coverage-96%25-brightgreen)
 
-## ✨ Features
+---
 
-- **🤖 LLM-First Design**: Natural language understanding powered by GitHub Models (GPT-4o-mini)
-- **🔄 Automatic Fallback**: Ollama (llama3.2) as local backup when GitHub Models is rate-limited
-- **🌡️ Air Quality Analysis**: PM2.5, PM10, and temperature data with exercise safety guidance
-- **� 16-Day Forecasts**: Weather predictions up to 16 days ahead
-- **📊 Historical Data**: Access up to 92 days of past weather/air quality data
-- **� Conversation Context**: Follow-up queries like "what about tomorrow?" or "how about Paris?"
-- **🌍 Smart Geocoding**: Understands cities, countries, and coordinates (lat/lon)
-- **🌟 NASA APOD**: Astronomy Picture of the Day with AI summaries
-- **💾 Smart Caching**: 10-minute TTL to reduce API calls
-- **📄 OpenAPI Spec**: Ready for Microsoft Copilot Studio integration
+## ✅ Task Requirements
+
+| Requirement | Status | Implementation |
+|-------------|--------|----------------|
+| Weather/Air Quality from free APIs | ✅ | Open-Meteo API (no key required) |
+| LLM reasoning with free model | ✅ | GitHub Models (GPT-4o-mini) |
+| Copilot Studio compatible API | ✅ | OpenAPI 3.0 spec at `/docs` |
+| POST /analyze endpoint | ✅ | Returns PM2.5, PM10, temp, guidance |
+| GET /apod/today endpoint | ✅ | NASA APOD with AI summary |
+| Response includes attribution | ✅ | All responses credit data sources |
+
+---
 
 ## 🚀 Quick Start
 
-### Prerequisites
-
-- Python 3.11+
-- GitHub Personal Access Token (for LLM - [get one here](https://github.com/settings/tokens))
-
-### Installation
+### 1. Clone & Setup
 
 ```bash
-# Clone the repository
-git clone https://github.com/yourusername/air-insights-agent.git
-cd air-insights-agent
+git clone https://github.com/TheAVengineer/Agentic-Air-Insights-Copilot-.git
+cd Agentic-Air-Insights-Copilot-
 
-# Create virtual environment
-python -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
+# macOS/Linux
+chmod +x setup.sh && ./setup.sh
 
-# Install dependencies
-pip install -r requirements.txt
-
-# Configure environment
-cp .env.example .env
-# Edit .env and add your GITHUB_TOKEN
+# Windows
+setup.bat
 ```
 
-### Running the Application
+### 2. Add GitHub Token (if prompted)
 
-```bash
-# Start the server
-python main.py
+- Go to https://github.com/settings/tokens
+- Generate new token (classic) - no special permissions needed
+- Paste when prompted
 
-# Or with uvicorn for development
-uvicorn main:app --reload --host 0.0.0.0 --port 8000
+### 3. Test in Browser
+
+Open **http://localhost:8000/** and try:
+
+**Demo Prompt 1** (Air Quality):
+```
+What is the PM2.5 and temperature around 42.6977, 23.3219 for the next 6 hours and should I run outdoors?
 ```
 
-### Access Points
+**Demo Prompt 2** (NASA APOD):
+```
+Show today NASA APOD and summarize in 2 lines.
+```
 
-- **Web UI**: http://localhost:8000/
-- **API Docs (Swagger)**: http://localhost:8000/docs
-- **OpenAPI JSON**: http://localhost:8000/openapi.json
+---
+
+## 📸 Screenshots
+
+<details>
+<summary><b>Click to view all 7 screenshots</b></summary>
+
+### 1. Web UI Overview
+*Main chat interface with quick action buttons*
+
+![UI Overview](docs/screenshots/01-ui-overview.png)
+
+### 2. Air Quality Analysis (Demo Prompt 1)
+*PM2.5, temperature, and safety guidance for coordinates*
+
+![Air Quality](docs/screenshots/02-air-quality-demo.png)
+
+### 3. Follow-up: Different City
+*What about Plovdiv for the next 3 days?*
+
+![Plovdiv](docs/screenshots/03-followup-plovdiv.png)
+
+### 4. Follow-up: Weather Request
+*What about the weather? - Rain forecast*
+
+![Weather](docs/screenshots/04-weather-plovdiv.png)
+
+### 5. 7-Day Forecast
+*Weather in Sofia for the next week*
+
+![Sofia](docs/screenshots/05-sofia-week-forecast.png)
+
+### 6. NASA APOD (Demo Prompt 2)
+*Today astronomy picture - Christmas Tree Cluster*
+
+![APOD](docs/screenshots/06-nasa-apod-chat.png)
+
+### 7. NASA Image
+*The actual NGC 2264 Christmas Tree Cluster*
+
+![NASA Image](docs/screenshots/07-nasa-apod-image.png)
+
+</details>
+
+---
+
+## ✨ Features
+
+- 🤖 **LLM-First**: Natural language via GitHub Models (GPT-4o-mini)
+- 🔄 **Auto Fallback**: Ollama backup when GitHub Models unavailable
+- 🌡️ **Air Quality**: PM2.5, PM10, temperature with safety guidance
+- 📅 **Forecasts**: Up to 16 days ahead
+- 📊 **Historical**: Up to 92 days of past data
+- 💬 **Follow-ups**: What about tomorrow? / How about Paris?
+- 🌍 **Geocoding**: Cities, countries, or lat/lon coordinates
+- 🌟 **NASA APOD**: Daily astronomy picture with AI summary
+- 💾 **Caching**: 10-minute TTL to reduce API calls
+
+---
+
+## 🏗️ Project Structure
+
+```
+├── main.py              # FastAPI entry point
+├── agent/               # Agent logic (orchestrator, query parser)
+├── api/                 # Routes and Pydantic models
+├── tools/               # Weather, NASA, geocoding clients
+├── llm/                 # GitHub Models + Ollama integration
+├── policies/            # Safety thresholds (JSON config)
+├── ui/                  # Web chat interface
+├── tests/               # 652 tests (96% coverage)
+└── docs/                # Documentation + screenshots
+```
+
+---
 
 ## 📖 API Reference
 
 ### POST /analyze
-
-Analyze air quality and get exercise guidance.
-
-**Request:**
-```json
-{
-    "latitude": 42.6977,
-    "longitude": 23.3219,
-    "hours": 6
-}
-```
-
-**Response:**
-```json
-{
-    "pm25_avg": 15.5,
-    "pm10_avg": 28.3,
-    "temp_avg": 18.2,
-    "guidance_text": "✅ Great conditions for outdoor exercise!...",
-    "safety_level": "SAFE",
-    "data_quality": "HIGH",
-    "forecast_hours": 6,
-    "attribution": "Weather data by Open-Meteo.com",
-    "cached": false,
-    "timestamp": "2024-12-20T10:30:00Z"
-}
+```bash
+curl -X POST http://localhost:8000/analyze -H "Content-Type: application/json" -d '{"latitude": 42.6977, "longitude": 23.3219, "hours": 6}'
 ```
 
 ### GET /apod/today
-
-Get NASA's Astronomy Picture of the Day.
-
-**Response:**
-```json
-{
-    "title": "The Orion Nebula in Infrared",
-    "url": "https://apod.nasa.gov/apod/image/...",
-    "explanation": "...",
-    "summary": "A stunning infrared view of...",
-    "date": "2024-12-20",
-    "media_type": "image",
-    "attribution": "Image from NASA Astronomy Picture of the Day"
-}
+```bash
+curl http://localhost:8000/apod/today
 ```
 
 ### POST /chat
-
-Natural language chat interface.
-
-**Request:**
-```json
-{
-    "message": "Is it safe to run at 42.6977, 23.3219 for 6 hours?"
-}
+```bash
+curl -X POST http://localhost:8000/chat -H "Content-Type: application/json" -d '{"message": "Is it safe to run in Sofia?"}'
 ```
 
-## 🏗️ Architecture
-
-```
-air-insights-agent/
-├── main.py                 # FastAPI entry point
-├── agent/
-│   ├── orchestrator.py     # Main agent brain
-│   ├── planner.py          # Execution planning
-│   └── memory.py           # TTL-based cache
-├── api/
-│   ├── models.py           # Pydantic schemas
-│   └── routes.py           # API endpoints
-├── tools/
-│   ├── weather_client.py   # Open-Meteo API
-│   └── nasa_client.py      # NASA APOD API
-├── llm/
-│   ├── client.py           # GitHub Models client
-│   └── prompts.py          # Prompt templates
-├── policies/
-│   ├── safety_rules.json   # Business rules (thresholds)
-│   └── validation.py       # Input validation
-├── tests/                  # Unit & integration tests
-├── ui/                     # Web chat interface
-└── docs/                   # Documentation
-```
-
-### Agentic Flow
-
-```
-User Request → Plan → Validate → Cache Check → Fetch APIs → 
-Validate Data → LLM Reasoning → Cache Store → Response
-```
-
-## 🔧 Configuration
-
-### Environment Variables
-
-| Variable | Description | Required |
-|----------|-------------|----------|
-| `GITHUB_TOKEN` | GitHub PAT for Models API | Yes |
-| `NASA_API_KEY` | NASA API key (DEMO_KEY works) | No |
-| `LOG_LEVEL` | Logging level (DEBUG/INFO/WARNING) | No |
-| `HOST` | Server host | No (default: 0.0.0.0) |
-| `PORT` | Server port | No (default: 8000) |
-
-### Policy Configuration
-
-Edit `policies/safety_rules.json` to customize:
-- Air quality thresholds (PM2.5, PM10)
-- Temperature limits for exercise
-- Cache TTL
-- Retry behavior
+---
 
 ## 🧪 Testing
 
 ```bash
-# Run all tests
-pytest
-
-# Run with coverage
-pytest --cov=. --cov-report=html
-
-# Run specific test file
-pytest tests/test_validation.py -v
+pytest tests/ -v              # Run all 652 tests
+pytest --cov=. --cov-report=html  # With coverage
 ```
-
-## 🔌 Copilot Studio Integration
-
-### Track A: Microsoft Copilot Studio
-
-1. Export OpenAPI spec: `GET /openapi-export.json`
-2. In Copilot Studio, create a new Agent
-3. Add Tool → REST API → Import OpenAPI
-4. Use this tool description:
-
-```
-Air Quality Analysis Tool - Analyzes air quality (PM2.5, PM10) and 
-weather data for any location and provides exercise safety guidance. 
-Call this when users ask about outdoor exercise safety, air quality, 
-or running conditions for a specific location.
-```
-
-### Track B: Web UI
-
-The included web chat UI (`/`) provides a standalone interface that can be deployed anywhere.
-
-## 📊 Demo Prompts
-
-Try these prompts to see the agent in action:
-
-### Weather & Air Quality
-```
-What's the weather in London for the next 3 days?
-Is it safe to run outside in Tokyo?
-Air quality in Sofia for the next week
-What about Berlin? (follow-up)
-```
-
-### Historical Data (up to 92 days)
-```
-How was the weather yesterday in Paris?
-Air quality in New York last week
-Weather in Sydney for the past 5 days
-```
-
-### Coordinates Support
-```
-Weather at 42.6977, 23.3219 for the next 6 hours
-Is it safe to exercise at lat 51.5, lon -0.1?
-```
-
-### NASA APOD
-```
-Show today's NASA picture
-What's the astronomy picture of the day?
-NASA APOD
-```
-
-## 🔌 Microsoft Copilot Studio Integration
-
-This project follows **Track A: Microsoft Stack**:
-
-| Component | Implementation |
-|-----------|----------------|
-| **Service** | Python FastAPI |
-| **Orchestration** | Custom planner (`agent/orchestrator.py` + `query_parser.py`) |
-| **LLM** | GitHub Models (GPT-4o-mini) + Ollama fallback |
-| **OpenAPI** | Auto-generated at `/docs` with Copilot Studio-ready tool descriptions |
-
-### Integration Steps
-
-1. Export OpenAPI: `curl http://localhost:8081/openapi.json > openapi.json`
-2. In Copilot Studio → Create Agent → Add Tool → REST API → Import OpenAPI
-3. The tool descriptions are optimized for **Generative Orchestration** auto-selection
-
-See [`docs/COPILOT_STUDIO_INTEGRATION.md`](docs/COPILOT_STUDIO_INTEGRATION.md) for detailed instructions.
-
-> **Note**: Copilot Studio requires a Microsoft 365 work/school account. The API is fully prepared for integration and can be demonstrated with workspace access.
-
-## 📝 Attribution
-
-- **Weather Data**: [Open-Meteo.com](https://open-meteo.com/) (free, no API key)
-- **Air Quality Data**: [Open-Meteo Air Quality API](https://open-meteo.com/en/docs/air-quality-api)
-- **NASA Images**: [NASA Astronomy Picture of the Day](https://apod.nasa.gov/)
-- **LLM**: [GitHub Models](https://github.blog/2024-07-25-introducing-github-models/) (free tier)
-- **Fallback LLM**: [Ollama](https://ollama.ai/) with llama3.2
-
-## 🎯 Quality Checklist
-
-- [x] LLM-first natural language understanding (no hardcoded intent matching)
-- [x] Automatic LLM fallback (GitHub Models → Ollama)
-- [x] Input validation (lat/lon bounds, hours 1-384)
-- [x] Historical data support (up to 92 days past)
-- [x] Future forecasts (up to 16 days)
-- [x] Conversation context for follow-up queries
-- [x] Error handling with retry/backoff
-- [x] 10-minute caching for API responses
-- [x] Off-topic query handling with polite redirects
-- [x] Type hints throughout
-- [x] Unit tests
-- [x] Structured logging
-- [x] OpenAPI documentation with Copilot Studio-ready descriptions
-- [x] Attribution included in responses
-
-## 📄 License
-
-MIT License - See [LICENSE](LICENSE) for details.
 
 ---
 
-Built with ❤️ for the AI Adoption Specialist role assessment.
+## 🔌 Copilot Studio Integration
+
+**Track A: Microsoft Stack**
+
+1. Export: `curl http://localhost:8000/openapi.json > openapi.json`
+2. Copilot Studio → Create Agent → Add Tool → REST API → Import OpenAPI
+
+See [docs/COPILOT_STUDIO_INTEGRATION.md](docs/COPILOT_STUDIO_INTEGRATION.md) for details.
+
+---
+
+## 🔧 Configuration
+
+| Variable | Required | Description |
+|----------|----------|-------------|
+| `GITHUB_TOKEN` | Yes | GitHub PAT for Models API |
+| `NASA_API_KEY` | No | NASA key (DEMO_KEY works) |
+| `PORT` | No | Server port (default: 8000) |
+
+---
+
+## 📝 Attribution
+
+- Weather & Air Quality: [Open-Meteo.com](https://open-meteo.com/)
+- NASA Images: [NASA APOD](https://apod.nasa.gov/)
+- LLM: [GitHub Models](https://github.blog/2024-07-25-introducing-github-models/)
+- Geocoding: [OpenStreetMap Nominatim](https://nominatim.org/)
+
+---
+
+## 📚 Additional Docs
+
+- [Design Document](docs/DESIGN.md)
+- [Copilot Studio Guide](docs/COPILOT_STUDIO_INTEGRATION.md)
+
+---
+
+**GitHub**: [TheAVengineer/Agentic-Air-Insights-Copilot-](https://github.com/TheAVengineer/Agentic-Air-Insights-Copilot-)

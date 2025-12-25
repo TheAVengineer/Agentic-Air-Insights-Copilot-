@@ -508,7 +508,7 @@ class WeatherClient:
             Tuple of (AirQualityData, WeatherData, DailyForecast)
         """
         # Calculate days needed
-        days = max(7, (hours + 23) // 24)  # At least 7 days
+        days = max(7, (hours + 23) // 24)  # At least 7 dasys
         days = min(days, 16)  # Max 16 days
         
         # Hourly data is limited to 72 hours for air quality
