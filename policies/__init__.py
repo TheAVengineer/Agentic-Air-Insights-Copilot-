@@ -17,7 +17,7 @@ POLICIES_DIR = Path(__file__).parent
 def load_safety_rules() -> dict:
     """Load safety rules from JSON configuration."""
     rules_path = POLICIES_DIR / "safety_rules.json"
-    with open(rules_path, "r") as f:
+    with open(rules_path, "r", encoding="utf-8") as f:
         return json.load(f)
 
 
